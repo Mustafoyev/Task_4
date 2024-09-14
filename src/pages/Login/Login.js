@@ -50,13 +50,6 @@ export const Login = () => {
 		} else {
 			toast.error('You are blocked and cannot log in.');
 		}
-
-		// try {
-
-		// } catch (data) {
-		// 	toast.error('Promise error!!!');
-		// 	console.log('Error signing up user:', data.error.message);
-		// }
 	};
 
 	return (
