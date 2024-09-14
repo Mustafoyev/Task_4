@@ -1,0 +1,53 @@
+.login {
+	display: flex;
+	height: 100vh;
+}
+
+.login-left-content {
+	width: 50%;
+	padding: 100px 40px;
+	background-image: url('../../assets/images/Rectangle1.png');
+}
+
+.login-img {
+	display: block;
+	margin: 0 auto;
+}
+
+.login-right-content {
+	flex-grow: 1;
+	margin: auto 0;
+	padding: 10px 136px;
+}
+
+.login-title {
+	margin: 0;
+	margin-bottom: 10px;
+	font-family: 'Arial Black';
+	font-style: normal;
+	font-weight: 900;
+	font-size: 36px;
+	line-height: 51px;
+	color: #000000;
+}
+
+.login-text {
+	margin: 0;
+	margin-bottom: 21px;
+	font-family: 'Roboto';
+	font-style: normal;
+	font-weight: 400;
+	font-size: 13px;
+	line-height: 15px;
+	color: #000000;
+}
+
+.login-link {
+	font-family: 'Roboto';
+	font-style: normal;
+	font-weight: 400;
+	font-size: 13px;
+	line-height: 15px;
+	color: #549ff9;
+	text-decoration: none;
+}
