@@ -8,7 +8,7 @@ import {
 	doc,
 	deleteDoc,
 } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, deleteUser } from 'firebase/auth';
 import { auth } from '../../firebase.config';
 import { TbLockFilled } from 'react-icons/tb';
 import { TbLockOpen2 } from 'react-icons/tb';
@@ -63,8 +63,10 @@ export const Home = () => {
 	};
 
 	const handleDelete = async () => {
+		const user = auth.currentUser;
 		const updatedData = doc(db, 'users', selectedUserId[0].id);
 		await deleteDoc(updatedData);
+		await deleteUser(user);
 		if (selectedUserId[0].id == userAuth.uid) {
 			localStorage.removeItem('token');
 			dispatch(removeToken(''));

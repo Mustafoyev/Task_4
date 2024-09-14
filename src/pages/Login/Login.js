@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './login.scss';
 import loginImg from '../../assets/images/login.png';
 import { Button, InputAdornment, Stack, TextField } from '@mui/material';
@@ -12,15 +12,29 @@ import { auth } from '../../firebase.config';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToken } from '../../redux/token/tokenAction';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase.config';
 
 export const Login = () => {
 	const [type, setType] = useState(false);
+	const [users, setUsers] = useState([]);
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
+	const usersCollection = collection(db, 'users');
+
+	const getUsers = async () => {
+		const data = await getDocs(usersCollection);
+		setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+	};
+
+	useEffect(() => {
+		getUsers();
+	}, []);
 
 	const handleSubmit = async (evt) => {
 		evt.preventDefault();
-		try {
+		const status = users.filter((user) => user.email == evt.target[0].value);
+		if (status[0].status) {
 			const data = await signInWithEmailAndPassword(
 				auth,
 				evt.target[0].value,
@@ -33,10 +47,16 @@ export const Login = () => {
 			localStorage.setItem('token', data?.user?.accessToken);
 			dispatch(addToken(data?.user?.accessToken));
 			navigate('/');
-		} catch (data) {
-			toast.error('Promise error!!!');
-			console.log('Error signing up user:', data.error.message);
+		} else {
+			toast.error('You are blocked and cannot log in.');
 		}
+
+		// try {
+
+		// } catch (data) {
+		// 	toast.error('Promise error!!!');
+		// 	console.log('Error signing up user:', data.error.message);
+		// }
 	};
 
 	return (
