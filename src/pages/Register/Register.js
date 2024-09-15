@@ -14,50 +14,41 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToken } from '../../redux/token/tokenAction';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
+import { dateTime } from '../../dateTime';
 
 export const Register = () => {
 	const [type, setType] = useState(false);
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
-	// const usersCollection = collection(db, 'users');
 
-	async function signUp(evt) {
-		evt.preventDefault();
-		try {
-			// Create user with email and password
-			const userCredential = await createUserWithEmailAndPassword(
-				auth,
-				evt.target[4].value,
-				evt.target[6].value,
-			);
-			const user = userCredential.user;
+	const schema = Yup.object({
+		name: Yup.string().required('Required'),
+		lastName: Yup.string().required('Required'),
+		email: Yup.string().email('Invalid email format').required('Required'),
+		password: Yup.string()
+			.min(6, 'Password must not be less than 6 characters')
+			.max(9, 'Password must not exceed 9 characters')
+			.required('Required'),
+	});
 
-			// Save additional user information in Firestore
-			await setDoc(doc(db, 'users', user.uid), {
-				name: evt.target[0].value,
-				lastName: evt.target[2].value,
-				status: 'true',
-				email: evt.target[4].value,
-				lastLogin: user.metadata.lastSignInTime,
-			});
-
-			await updateProfile(user, {
-				displayName: evt.target[0].value,
-			});
-
-			evt.target[0].value = '';
-			evt.target[2].value = '';
-			evt.target[4].value = '';
-			evt.target[6].value = '';
-			toast.success('Promise resolved!!!');
-			localStorage.setItem('token', user.accessToken);
-			dispatch(addToken(user.accessToken));
-			navigate('/');
-		} catch (error) {
-			toast.error('Promise error!!!');
-			console.error('Error signing up user:', error.message);
-		}
-	}
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors },
+	} = useForm({
+		mode: 'all',
+		defaultValues: {
+			name: '',
+			lastName: '',
+			email: '',
+			password: '',
+		},
+		resolver: yupResolver(schema),
+	});
 
 	return (
 		<div className='register-wrapper'>
@@ -78,12 +69,65 @@ export const Register = () => {
 						Sign in
 					</Link>
 				</p>
-				<form onSubmit={signUp}>
+				<form
+					onSubmit={handleSubmit(async (data) => {
+						try {
+							// Create user with email and password
+							const userCredential = await createUserWithEmailAndPassword(
+								auth,
+								data.email,
+								data.password,
+							);
+							const user = userCredential.user;
+
+							// Save additional user information in Firestore
+							await setDoc(doc(db, 'users', user.uid), {
+								name: data.name,
+								lastName: data.lastName,
+								status: 'true',
+								email: data.email,
+								lastLogin: dateTime,
+							});
+
+							await updateProfile(user, {
+								displayName: data.name,
+							});
+							reset();
+							toast.success('Promise resolved!!!');
+							localStorage.setItem('token', user?.accessToken);
+							dispatch(addToken(user?.accessToken));
+							navigate('/');
+						} catch (error) {
+							toast.error('Promise error!!!');
+							console.error('Error signing up user:', error.message);
+						}
+					})}>
 					<Stack width={'330px'} spacing={3}>
-						<TextField type='text' label='Firs name' />
-						<TextField type='text' label='Last name' />
-						<TextField type='email' label='Email' />
 						<TextField
+							{...register('name')}
+							helperText={errors.name?.message}
+							error={errors.name ? true : false}
+							type='text'
+							label='Firs name'
+						/>
+						<TextField
+							{...register('lastName')}
+							helperText={errors.lastName?.message}
+							error={errors.lastName ? true : false}
+							type='text'
+							label='Last name'
+						/>
+						<TextField
+							{...register('email')}
+							helperText={errors.email?.message}
+							error={errors.email ? true : false}
+							type='email'
+							label='Email'
+						/>
+						<TextField
+							{...register('password')}
+							helperText={errors?.password?.message}
+							error={errors?.password ? true : false}
 							type={type ? 'text' : 'password'}
 							label='Password'
 							InputProps={{

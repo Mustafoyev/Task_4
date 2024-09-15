@@ -17,6 +17,7 @@ import { MdOutlineIndeterminateCheckBox } from 'react-icons/md';
 import { useDispatch } from 'react-redux';
 import { removeToken } from '../../redux/token/tokenAction';
 import { useNavigate } from 'react-router-dom';
+import { deleteUserById } from '../../authDelete';
 
 export const Home = () => {
 	const [users, setUsers] = useState([]);
@@ -66,8 +67,10 @@ export const Home = () => {
 		const user = auth.currentUser;
 		const updatedData = doc(db, 'users', selectedUserId[0].id);
 		await deleteDoc(updatedData);
-		await deleteUser(user);
+		await deleteUserById(selectedUserId[0].id);
+
 		if (selectedUserId[0].id == userAuth.uid) {
+			await deleteUser(user);
 			localStorage.removeItem('token');
 			dispatch(removeToken(''));
 			navigate('/register');
@@ -122,9 +125,7 @@ export const Home = () => {
 									{user?.email}
 								</td>
 								<td className={user?.status ? 'opacity-100' : 'opacity-25'}>
-									{userAuth
-										? userAuth?.metadata?.lastSignInTime
-										: user?.lastLogin}
+									{user?.lastLogin}
 								</td>
 								<td className={user?.status ? 'opacity-100' : 'opacity-25'}>
 									{user?.status ? 'Active' : 'Block'}

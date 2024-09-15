@@ -12,8 +12,12 @@ import { auth } from '../../firebase.config';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToken } from '../../redux/token/tokenAction';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase.config';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
+import { dateTime } from '../../dateTime';
 
 export const Login = () => {
 	const [type, setType] = useState(false);
@@ -31,26 +35,27 @@ export const Login = () => {
 		getUsers();
 	}, []);
 
-	const handleSubmit = async (evt) => {
-		evt.preventDefault();
-		const status = users.filter((user) => user.email == evt.target[0].value);
-		if (status[0].status) {
-			const data = await signInWithEmailAndPassword(
-				auth,
-				evt.target[0].value,
-				evt.target[2].value,
-			);
+	const schema = Yup.object({
+		email: Yup.string().email('Invalid email format').required('Required'),
+		password: Yup.string()
+			.min(6, 'Password must not be less than 6 characters')
+			.max(9, 'Password must not exceed 9 characters')
+			.required('Required'),
+	});
 
-			evt.target[0].value = '';
-			evt.target[2].value = '';
-			toast.success('Promise resolved!!!');
-			localStorage.setItem('token', data?.user?.accessToken);
-			dispatch(addToken(data?.user?.accessToken));
-			navigate('/');
-		} else {
-			toast.error('You are blocked and cannot log in.');
-		}
-	};
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors },
+	} = useForm({
+		mode: 'all',
+		defaultValues: {
+			email: '',
+			password: '',
+		},
+		resolver: yupResolver(schema),
+	});
 
 	return (
 		<div className='login'>
@@ -71,10 +76,46 @@ export const Login = () => {
 						Sign up
 					</Link>
 				</p>
-				<form onSubmit={handleSubmit}>
+				<form
+					onSubmit={handleSubmit(async (data) => {
+						try {
+							const status = users.filter((user) => user?.email == data?.email);
+
+							if (status[0].status) {
+								const newData = await signInWithEmailAndPassword(
+									auth,
+									data.email,
+									data.password,
+								);
+
+								const updatedData = doc(db, 'users', status[0]?.id);
+								const newUpdateData = { lastLogin: dateTime };
+								await updateDoc(updatedData, newUpdateData);
+
+								reset();
+								toast.success('Promise resolved!!!');
+								localStorage.setItem('token', newData?.user?.accessToken);
+								dispatch(addToken(newData?.user?.accessToken));
+								navigate('/');
+							} else {
+								toast.error('You are blocked and cannot log in.');
+							}
+						} catch (data) {
+							toast.error('Invalid email or password');
+						}
+					})}>
 					<Stack width={'330px'} spacing={3}>
-						<TextField type='email' label='Email' />
 						<TextField
+							{...register('email')}
+							helperText={errors?.email?.message}
+							error={errors?.email ? true : false}
+							type='email'
+							label='Email'
+						/>
+						<TextField
+							{...register('password')}
+							helperText={errors?.password?.message}
+							error={errors?.password ? true : false}
 							type={type ? 'text' : 'password'}
 							label='Password'
 							InputProps={{
